@@ -1,0 +1,37 @@
+---
+entryPoints:
+  web:
+    address: ':80'
+  websecure:
+    address: ':443'
+providers:
+  docker:
+    exposedByDefault: false
+    network: local-proxy
+  file:
+    directory: /etc/traefik/config
+    watch: true
+api:
+  dashboard: true
+metrics:
+  prometheus:
+    manualRouting: true
+certificatesResolvers:
+  local_acme:
+    acme:
+      email: admin@acme.local
+      storage: /etc/traefik/acme.json
+      caServer: 'https://step-ca:9000/acme/dev/directory'
+      httpChallenge:
+        entrypoint: web
+  local_dns_acme:
+    acme:
+      email: admin@acme.local
+      storage: /etc/traefik/acme.json
+      caServer: 'https://step-ca:9000/acme/dev/directory'
+      dnsChallenge:
+        provider: httpreq
+        resolvers:
+          - 172.99.0.53
+log:
+  level: INFO

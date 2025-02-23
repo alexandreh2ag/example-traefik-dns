@@ -1,0 +1,15 @@
+- name: devl
+  type: SOA
+  value: ns.alex.devl mail.alex.devl 1000 10800 60 300 60
+
+- name: "*.devl"
+  type: SOA
+  value: ns.alex.devl mail.alex.devl 1000 10800 60 300 60
+
+- name: "*.devl"
+  type: NS
+  value: ns.alex.devl
+
+- name: ns.alex.devl
+  type: A
+  value: 172.99.0.53

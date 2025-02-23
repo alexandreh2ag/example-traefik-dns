@@ -1,0 +1,7 @@
+---
+
+http:
+  middlewares:
+    reflet-redirectscheme:
+      redirectScheme:
+        scheme: https

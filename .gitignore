@@ -1,0 +1,13 @@
+/.idea
+.DS_Store
+
+/traefik/config/
+!/traefik/config/default.yml
+
+/ssl
+!/ssl/.gitkeep
+
+/acme/config
+!/acme/config/.gitkeep
+/acme/secrets
+!/acme/secrets/.gitkeep

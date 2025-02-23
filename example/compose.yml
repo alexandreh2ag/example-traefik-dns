@@ -1,0 +1,57 @@
+
+services:
+  rabbitmq:
+    image: rabbitmq:latest
+    container_name: ${COMPOSE_PROJECT_NAME}-rabbitmq
+    hostname: ${COMPOSE_PROJECT_NAME}-rabbitmq
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-rabbitmq-http.entrypoints=web"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-rabbitmq-http.rule=Host(`rabbitmq.${BASE_DOMAIN}`)"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-rabbitmq-http.middlewares=reflet-redirectscheme@file"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-rabbitmq-http.service=noop@internal"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-rabbitmq-https.entrypoints=websecure"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-rabbitmq-https.rule=Host(`rabbitmq.${BASE_DOMAIN}`)"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-rabbitmq-https.service=${COMPOSE_PROJECT_NAME}-rabbitmq@docker"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-rabbitmq-https.tls=true"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-rabbitmq-https.tls.certresolver=local_acme"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-rabbitmq.loadBalancer.server.port=15672"
+    networks:
+      - default
+      - local-proxy
+
+  db:
+    image: mariadb:latest
+    container_name: ${COMPOSE_PROJECT_NAME}-db
+    hostname: ${COMPOSE_PROJECT_NAME}-db
+    environment:
+      MARIADB_ROOT_PASSWORD: demo
+    labels:
+      - "godnsd.enable=true"
+      - "godnsd.records.db.name=db.${BASE_DOMAIN}"
+      - "godnsd.records.db.type=A"
+
+  nginx:
+    image: nginx:latest
+    container_name: ${COMPOSE_PROJECT_NAME}-nginx
+    hostname: ${COMPOSE_PROJECT_NAME}-nginx
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-nginx-http.entrypoints=web"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-nginx-http.rule=Host(`www.${BASE_DOMAIN}`)"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-nginx-http.middlewares=reflet-redirectscheme@file"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-nginx-http.service=noop@internal"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-nginx-https.entrypoints=websecure"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-nginx-https.rule=Host(`www.${BASE_DOMAIN}`)"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-nginx-https.service=${COMPOSE_PROJECT_NAME}-nginx@docker"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-nginx-https.tls=true"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME}-nginx-https.tls.certresolver=local_acme"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME}-nginx.loadBalancer.server.port=80"
+    networks:
+      - default
+      - local-proxy
+
+
+networks:
+  local-proxy:
+    external: true

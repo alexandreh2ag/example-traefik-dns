@@ -1,0 +1,80 @@
+services:
+  traefik:
+    image: traefik:v3.0
+    container_name: "${COMPOSE_PROJECT_NAME}-traefik"
+    hostname: traefik
+    restart: "unless-stopped"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/config:/etc/traefik/config:ro
+      - ./ssl:/etc/traefik/ssl
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik-api-http.entrypoints=web"
+      - "traefik.http.routers.traefik-api-http.rule=Host(`${TRAEFIK_HOSTNAME}`)"
+      - "traefik.http.routers.traefik-api-http.service=api@internal"
+      - "traefik.http.routers.traefik-api-https.entrypoints=websecure"
+      - "traefik.http.routers.traefik-api-https.rule=Host(`${TRAEFIK_HOSTNAME}`)"
+      - "traefik.http.routers.traefik-api-https.service=api@internal"
+      - "traefik.http.routers.traefik-api-https.tls=true"
+      - "traefik.http.routers.traefik-api-https.tls.certresolver=local_acme"
+      - "godnsd.enable=true"
+      - "godnsd.records.rp.name=${TRAEFIK_HOSTNAME}"
+      - "godnsd.records.rp.type=A"
+      - "godnsd.records.rp.network=local-proxy"
+      - "godnsd.records.wildcard_local.name=*.devl"
+      - "godnsd.records.wildcard_local.type=A"
+      - "godnsd.records.wildcard_local.network=local-proxy"
+    networks:
+      local-proxy:
+        ipv4_address: 172.99.0.3
+    environment:
+      - LEGO_CA_CERTIFICATES=/etc/traefik/ssl/root_ca.crt
+      - HTTPREQ_ENDPOINT=http://dns/api/records
+      - HTTPREQ_PROPAGATION_TIMEOUT=60
+
+  step-ca:
+    image: smallstep/step-ca:0.27.1
+    container_name: "${COMPOSE_PROJECT_NAME}-step-ca"
+    hostname: step-ca
+    restart: "unless-stopped"
+    tty: true
+    expose:
+      - 9000
+    volumes:
+      - ./acme/config:/home/step/config
+      - ./acme/secrets:/home/step/secrets
+      - ./ssl:/home/step/certs
+    dns:
+      - 172.99.0.53
+    networks:
+      local-proxy:
+
+  dns:
+    image: alexandreh2ag/godnsd:v0.3.0
+    container_name: "${COMPOSE_PROJECT_NAME}-dns"
+    hostname: ${COMPOSE_PROJECT_NAME}-dns
+    restart: "unless-stopped"
+    command:
+      - "/usr/local/bin/godnsd"
+      - "start"
+      - "-l"
+      - "INFO"
+    expose:
+      - 53/udp
+      - 80/tcp
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./dns/config.yml:/etc/godnsd/config.yml:ro
+      - ./dns/dns.yml:/etc/godnsd/dns.yml:ro
+    networks:
+      local-proxy:
+        ipv4_address: 172.99.0.53
+
+networks:
+  local-proxy:
+    name: local-proxy
+    ipam:
+      config:
+        - subnet: 172.99.0.0/24
