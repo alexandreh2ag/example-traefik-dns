@@ -55,3 +55,7 @@ services:
 networks:
   local-proxy:
     external: true
+  default:
+    driver_opts:
+      # since Docker Desktop 0.39.0 on mac this option is needed
+      com.docker.network.bridge.gateway_mode_ipv4: nat-unprotected

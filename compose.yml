@@ -73,8 +73,15 @@ services:
         ipv4_address: 172.99.0.53
 
 networks:
+  default:
+    driver_opts:
+      # since Docker Desktop 0.39.0 on mac this option is needed
+      com.docker.network.bridge.gateway_mode_ipv4: nat-unprotected
   local-proxy:
     name: local-proxy
+    driver_opts:
+      # since Docker Desktop 0.39.0 on mac this option is needed
+      com.docker.network.bridge.gateway_mode_ipv4: nat-unprotected
     ipam:
       config:
         - subnet: 172.99.0.0/24
